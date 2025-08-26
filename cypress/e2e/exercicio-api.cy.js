@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-describe('Testes da Funcionalidade Usuários', () => {
+describe('Testes de Funcionalidade Usuários', () => {
   
   it('Deve validar contrato de usuários', () => {
     cy.request('/usuarios').then((response) => {
@@ -26,14 +26,17 @@ describe('Testes da Funcionalidade Usuários', () => {
     })
   })
 
- it('Deve cadastrar um usuário com sucesso', () => {
-  cy.criarUsuario({
-    nome: 'Usuário Teste',
-    email: `teste${Date.now()}@qa.com`,
-    password: '123456',
-    administrador: 'true'
+  it('Deve cadastrar um usuário com sucesso', () => {
+    cy.criarUsuario({
+      nome: 'Usuário Teste',
+      email: `teste${Date.now()}@qa.com`,
+      password: '123456',
+      administrador: 'true'
+    }).then((usuario) => {
+      expect(usuario).to.have.property('_id')
+      expect(usuario).to.have.property('message', 'Cadastro realizado com sucesso')
+    })
   })
-})
 
   it('Deve validar um usuário com email inválido', () => {
     cy.request({
@@ -53,31 +56,52 @@ describe('Testes da Funcionalidade Usuários', () => {
     })
   })
 
-  it('Deve editar um usuário previamente cadastrado', () => {
-  cy.criarUsuario({
-    nome: 'Usuário Editar',
-    email: `editar${Date.now()}@qa.com`,
-    password: '123456',
-    administrador: 'true'
-  }).then((usuario) => {
-    cy.editarUsuario(usuario._id, {
-      nome: 'Usuário Editado',
-      email: `editado${Date.now()}@qa.com`,
-      password: '654321',
-      administrador: 'false'
+  it('Deve editar um usuário previamente cadastrado e validar alteração', () => {
+    cy.criarUsuario({
+      nome: 'Usuário Editar',
+      email: `editar${Date.now()}@qa.com`,
+      password: '123456',
+      administrador: 'true'
+    }).then((usuario) => {
+      cy.editarUsuario(usuario._id, {
+        nome: 'Usuário Editado',
+        email: `editado${Date.now()}@qa.com`,
+        password: '654321',
+        administrador: 'false'
+      }).then((response) => {
+        expect(response.status).to.eq(200)
+        expect(response.body.message).to.eq('Registro alterado com sucesso')
+      })
+
+     
+      cy.buscarUsuario(usuario._id).then((response) => {
+        expect(response.status).to.eq(200)
+        expect(response.body).to.include({
+          nome: 'Usuário Editado',
+          administrador: 'false'
+        })
+        expect(response.body.email).to.contain('editado')
+      })
     })
   })
-})
 
- it('Deve deletar um usuário previamente cadastrado', () => {
-  cy.criarUsuario({
-    nome: 'Usuário Deletar',
-    email: `deletar${Date.now()}@qa.com`,
-    password: '123456',
-    administrador: 'true'
-  }).then((usuario) => {
-    cy.deletarUsuario(usuario._id)
+  it('Deve deletar um usuário previamente cadastrado e validar exclusão', () => {
+    cy.criarUsuario({
+      nome: 'Usuário Deletar',
+      email: `deletar${Date.now()}@qa.com`,
+      password: '123456',
+      administrador: 'true'
+    }).then((usuario) => {
+      cy.deletarUsuario(usuario._id).then((response) => {
+        expect(response.status).to.eq(200)
+        expect(response.body.message).to.eq('Registro excluído com sucesso')
+      })
+
+      
+      cy.buscarUsuario(usuario._id, false).then((response) => {
+        expect([400, 404]).to.include(response.status)
+      })
+    })
   })
-})
 
 })
