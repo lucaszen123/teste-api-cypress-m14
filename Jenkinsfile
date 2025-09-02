@@ -14,7 +14,8 @@ pipeline {
         }
         stage('Executar testes') {
             steps {
-                sh 'NO_COLOR=1 npx cypress run'
+                sh '''NO_COLOR=1
+   npm run cy:run'''
             }
         }
     }
